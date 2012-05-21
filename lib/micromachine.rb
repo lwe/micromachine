@@ -20,18 +20,23 @@ class MicroMachine
 
   def trigger event, *args
     if trigger?(event)
-      @state = transitions_for[event][@state]
-      callbacks = @callbacks[@state] + @callbacks[:any]
-      callbacks.each { |callback| callback.call(*args) }
-      true
-    else
-      false
+      @state_was, @state = state, transitions_for[event][state]
+      callbacks = @callbacks[state] + @callbacks[:any]
+      result = callbacks.all? { |callback| callback.call(*args) != false }
+      @state = @state_was unless result
+
+      return result
     end
+
+    false
+  rescue
+    @state = @state_was
+    raise
   end
 
   def trigger?(event)
     raise InvalidEvent unless transitions_for.has_key?(event)
-    transitions_for[event][state] ? true : false
+    !!transitions_for[event][state]
   end
 
   def events

@@ -101,6 +101,18 @@ class MicroMachineTest < Test::Unit::TestCase
       assert_equal "State: Ignored", @state
       assert_equal "State: Ignored", @current
     end
+
+    should "not transition when callback returns false" do
+      @machine.on(:confirmed) { false }
+      assert_equal false, @machine.trigger(:confirm)
+      assert_equal :pending, @machine.state
+    end
+
+    should "not transition when callback raises exception" do
+      @machine.on(:confirmed) { raise "problem" }
+      assert_raise(RuntimeError) { @machine.trigger(:confirm) }
+      assert_equal :pending, @machine.state
+    end
   end
 
   context "dealing with from a model callbacks" do
